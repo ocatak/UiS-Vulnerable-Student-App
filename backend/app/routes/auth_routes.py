@@ -2,7 +2,16 @@ import time
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
-from app.auth import hash_password, verify_password, create_session, clear_session, get_user_from_session
+from app.auth import (
+    hash_password,
+    verify_password,
+    create_session,
+    clear_session,
+    get_user_from_session,
+    is_login_locked,
+    record_failed_login,
+    clear_failed_logins,
+)
 from app.database import run_query
 from app.email_service import send_reset_email
 
@@ -23,19 +32,36 @@ def login_page(request: Request):
 
 @router.post("/login", response_class=HTMLResponse)
 def login(request: Request, email: str = Form(...), password: str = Form(...)):
+    # Fix for: Credential brute force, /login (no rate limiting in A1)
+    if is_login_locked(email):
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error": "Too many failed login attempts. Please wait a minute and try again.",
+            },
+            status_code=429,
+        )
+
     user = run_query("SELECT * FROM users WHERE email=%s", (email,), fetchone=True)
     if not user:
+        record_failed_login(email)
         return templates.TemplateResponse(
             "login.html", {"request": request, "error": "No account found with that email."}
         )
     if not verify_password(password, user["password_hash"]):
+        record_failed_login(email)
         return templates.TemplateResponse(
             "login.html", {"request": request, "error": "Invalid password for this account."}
         )
 
+    clear_failed_logins(email)
     token = create_session(user["id"])
     resp = RedirectResponse("/dashboard", status_code=302)
-    resp.set_cookie("session_token", token)
+    # Fix for: Stored XSS -> session cookie theft, /messages
+    # HttpOnly stops document.cookie / injected JS from reading the session
+    # token even if a script does get injected somewhere else later.
+    resp.set_cookie("session_token", token, httponly=True, samesite="lax")
     return resp
 
 

@@ -22,7 +22,7 @@
     <div class="card">
       <div class="card-header"><i class="bi bi-chat-left-text me-1"></i>Latest messages</div>
       <ul class="list-group list-group-flush">
-        {% for m in messages %}<li class="list-group-item">{{ m.content|safe }}</li>{% else %}<li class="list-group-item text-muted">No recent messages</li>{% endfor %}
+        {% for m in messages %}<li class="list-group-item">{{ m.content }}</li>{% else %}<li class="list-group-item text-muted">No recent messages</li>{% endfor %}
       </ul>
     </div>
   </div>

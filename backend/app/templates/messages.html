@@ -17,7 +17,7 @@
 <ul class="list-group shadow-sm">
 {% for m in messages %}
   <li class="list-group-item d-flex justify-content-between align-items-start">
-    <div><strong>{{ m.sender_name }}</strong>: {{ m.content|safe }}</div>
+    <div><strong>{{ m.sender_name }}</strong>: {{ m.content }}</div>
     <a class="btn btn-sm btn-outline-secondary" href="/messages/{{m.id}}">Open</a>
   </li>
 {% else %}

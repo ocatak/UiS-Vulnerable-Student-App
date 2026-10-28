@@ -1,4 +1,4 @@
-import traceback
+import logging
 import requests
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse
@@ -8,6 +8,8 @@ from app.config import APP_ENV
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("/health")
@@ -52,8 +54,9 @@ def trigger_error(request: Request):
         x = 1 / 0
         return {"x": x}
     except Exception:
+        logger.exception("Unhandled error on /error")
         return templates.TemplateResponse(
             "error.html",
-            {"request": request, "details": traceback.format_exc()},
+            {"request": request, "details": "An internal error occurred. Please try again later"},
             status_code=500,
         )
