@@ -17,7 +17,7 @@
 
 <h5 class="mb-3">Recent comments</h5>
 {% for c in comments %}
-<div class="card p-3 mb-2"><strong>{{ c.full_name }}</strong><div class="text-muted mt-1">{{ c.content|safe }}</div></div>
+<div class="card p-3 mb-2"><strong>{{ c.full_name }}</strong><div class="text-muted mt-1">{{ c.content }}</div></div>
 {% else %}
 <div class="alert alert-secondary">No comments yet.</div>
 {% endfor %}

@@ -80,7 +80,7 @@ def update_profile(
         (full_name, phone, address, bio, role, user["id"]),
         commit=True,
     )
-    return RedirectResponse(f"/profile/{user['id']}", status_code=302)
+    return RedirectResponse(f"/profile", status_code=302)
 
 
 @router.post("/profile/avatar")

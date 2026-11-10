@@ -14,7 +14,7 @@
         <td>{{g.student_name}}</td>
         <td>{{g.assignment_title}}</td>
         <td><span class="badge bg-primary">{{g.grade_value}}</span></td>
-        <td>{{g.feedback|safe}}</td>
+        <td>{{g.feedback}}</td>
         <td>
           <form method="post" action="/admin/grades/{{g.id}}/update">
             <input class="form-control mb-1" name="grade_value" value="{{g.grade_value}}">

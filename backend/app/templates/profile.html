@@ -11,7 +11,7 @@
       <p class="mb-1"><strong>Role:</strong> <span class="badge bg-secondary">{{ profile.role }}</span></p>
       <p class="mb-1"><strong>Phone:</strong> {{ profile.phone }}</p>
       <p class="mb-1"><strong>Address:</strong> {{ profile.address }}</p>
-      <p class="mb-0"><strong>Bio:</strong> {{ profile.bio|safe }}</p>
+      <p class="mb-0"><strong>Bio:</strong> {{ profile.bio }}</p>
     </div>
     <div class="col-md-3 text-md-end mt-3 mt-md-0">
       {% if profile.avatar_path %}

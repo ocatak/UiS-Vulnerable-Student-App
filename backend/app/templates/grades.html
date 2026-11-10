@@ -13,7 +13,7 @@
       <tr>
         <td>{{ g.assignment_title }}</td>
         <td><span class="badge bg-primary">{{ g.grade_value }}</span></td>
-        <td>{{ g.feedback|safe }}</td>
+        <td>{{ g.feedback }}</td>
         <td><a class="btn btn-sm btn-outline-primary" href="/grades/{{ g.id }}">Open</a></td>
       </tr>
       {% else %}
