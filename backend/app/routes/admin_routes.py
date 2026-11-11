@@ -1,6 +1,9 @@
+from http.client import HTTPException
+
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi import HTTPException
 from app.database import run_query, get_conn
 from app.auth import get_user_from_session
 
@@ -75,18 +78,27 @@ def update_grade(
     grade_id: int,
     grade_value: str = Form(...),
     feedback: str = Form(...),
-    role: str = Form("student"),
 ):
     user = get_user_from_session(request)
     if not user:
         return RedirectResponse("/login", status_code=302)
 
-    if role in ["admin", "teacher", "ta"]:
-        run_query(
-            "UPDATE grades SET grade_value=%s, feedback=%s, status='published' WHERE id=%s",
-            (grade_value, feedback, grade_id),
-            commit=True,
-        )
+    if user["role"] not in ["admin", "teacher", "ta"]:
+        raise HTTPException(status_code=403, detail="Not authorized to update grades")
+
+    grade = run_query(
+        "SELECT * FROM grades WHERE id=%s",
+        (grade_id,),
+        fetchone=True)
+    
+    if not grade:
+        raise HTTPException(status_code=404, detail="Grade not found")
+     
+    run_query(
+                "UPDATE grades SET grade_value=%s, feedback=%s, status='published', grader_id =%s WHERE id=%s",
+                (grade_value, feedback, user["id"], grade_id),
+                commit=True,
+            )
 
     return RedirectResponse("/admin/grades", status_code=302)
 
@@ -96,12 +108,16 @@ def search_users(request: Request, q: str = ""):
     user = get_user_from_session(request)
     if not user:
         return RedirectResponse("/login", status_code=302)
+    
+    if user["role"] not in ["admin", "teacher", "ta"]:
+        return RedirectResponse("/dashboard", status_code=302)
 
-    sql = f"SELECT id, email, full_name, role FROM users WHERE email ILIKE '%{q}%' OR full_name ILIKE '%{q}%'"
+    sql = "SELECT id, email, full_name, role FROM users WHERE email ILIKE %s OR full_name ILIKE %s"
+    like_q = f"%{q}%"
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute(sql)
+            cur.execute(sql, (like_q, like_q))
             rows = cur.fetchall()
             cols = [d[0] for d in cur.description]
             users = [dict(zip(cols, r)) for r in rows]

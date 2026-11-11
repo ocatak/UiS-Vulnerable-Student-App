@@ -1,4 +1,5 @@
-import time
+import hashlib
+import secrets
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -80,22 +81,29 @@ def reset_password_page(request: Request):
 @router.post("/reset-password", response_class=HTMLResponse)
 def reset_password_request(request: Request, email: str = Form(...)):
     user = run_query("SELECT * FROM users WHERE email=%s", (email,), fetchone=True)
-    if not user:
-        return templates.TemplateResponse(
-            "reset_password.html",
-            {"request": request, "mode": "request", "message": "No user found with that email."},
-        )
 
-    token = str(int(time.time()))[-6:]
     run_query(
-        "INSERT INTO password_reset_tokens (user_id, token) VALUES (%s, %s)",
-        (user["id"], token),
+        "DELETE FROM password_reset_tokens WHERE created_at <= NOW() - INTERVAL '5 minutes'",
         commit=True,
     )
-    send_reset_email(email, token)
+
+    if user:
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        run_query(
+            "INSERT INTO password_reset_tokens (user_id, token) VALUES (%s, %s)",
+            (user["id"], token_hash),
+            commit=True,
+        )
+        send_reset_email(email, token)
+
     return templates.TemplateResponse(
         "reset_password.html",
-        {"request": request, "mode": "request", "message": f"Reset email sent to {email}."},
+        {
+            "request": request,
+            "mode": "request",
+            "message": "If an account exists with that email, a reset link has been sent.",
+        },
     )
 
 
@@ -106,15 +114,17 @@ def reset_password_token_page(request: Request, token: str):
 
 @router.post("/reset-password/{token}", response_class=HTMLResponse)
 def reset_password_token(request: Request, token: str, new_password: str = Form(...)):
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
     token_row = run_query(
-        "SELECT * FROM password_reset_tokens WHERE token=%s ORDER BY created_at DESC LIMIT 1",
-        (token,),
+        "SELECT * FROM password_reset_tokens WHERE token=%s AND created_at > NOW() - INTERVAL '5 minutes' ORDER BY created_at DESC LIMIT 1",
+        (token_hash,),
         fetchone=True,
     )
+    
     if not token_row:
         return templates.TemplateResponse(
             "reset_password.html",
-            {"request": request, "mode": "set", "token": token, "message": "Invalid token"},
+            {"request": request, "mode": "set", "token": token, "message": "Invalid or expired token"},
         )
 
     run_query(
@@ -122,4 +132,11 @@ def reset_password_token(request: Request, token: str, new_password: str = Form(
         (hash_password(new_password), token_row["user_id"]),
         commit=True,
     )
+
+    run_query(
+        "DELETE FROM password_reset_tokens WHERE id=%s",
+        (token_row["id"],),
+        commit=True,
+    )
+    
     return RedirectResponse("/login", status_code=302)
