@@ -30,7 +30,6 @@ def messages(request: Request):
         "messages.html", {"request": request, "user": user, "messages": inbox, "users": users}
     )
 
-
 @router.post("/messages")
 def send_message(request: Request, recipient_id: int = Form(...), content: str = Form(...)):
     user = get_user_from_session(request)

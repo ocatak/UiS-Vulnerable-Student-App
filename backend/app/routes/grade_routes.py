@@ -33,7 +33,6 @@ def grade_detail(request: Request, grade_id: int):
     user = get_user_from_session(request)
     if not user:
         return RedirectResponse("/login", status_code=302)
-
     grade = run_query(
             """
         SELECT g.*, a.title as assignment_title, u.full_name as student_name
