@@ -5,6 +5,6 @@
 <div class="card p-4">
   <p><strong>From:</strong> {{ message.sender_name }}</p>
   <p><strong>To:</strong> {{ message.recipient_name }}</p>
-  <p class="mb-0">{{ message.content|safe }}</p>
+  <p class="mb-0">{{ message.content }}</p>
 </div>
 {% endblock %}

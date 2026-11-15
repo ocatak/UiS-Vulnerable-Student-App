@@ -29,7 +29,6 @@
   <input class="form-control mb-2" name="phone" value="{{ profile.phone or '' }}" placeholder="Phone">
   <input class="form-control mb-2" name="address" value="{{ profile.address or '' }}" placeholder="Address">
   <textarea class="form-control mb-2" name="bio" placeholder="Bio">{{ profile.bio or '' }}</textarea>
-  <input type="hidden" name="role" value="{{ profile.role }}">
   <button class="btn btn-primary">Save profile</button>
 </form>
 
